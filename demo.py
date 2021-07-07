@@ -1,4 +1,4 @@
-from transformers import BertForMaskedLM, BertModel, BertTokenizer
+from transformers import CamembertTokenizer, CamembertForMaskedLM
 
 import torch
 
@@ -7,17 +7,18 @@ import torch
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
 ###
 
-tokenizer = BertTokenizer.from_pretrained('bert_model_finetuned/', do_lower_case=True)
-finetuned_model_dir = 'bert_model_finetuned/'
+tokenizer = CamembertTokenizer.from_pretrained('sloBERTa_model_finetuned/', do_lower_case=True)
+finetuned_model_dir = 'sloBERTa_model_finetuned/'
+mask_token_id = 32004
 
-model = BertForMaskedLM.from_pretrained(finetuned_model_dir)
+model = CamembertForMaskedLM.from_pretrained(finetuned_model_dir)
 
 #Model has to be put into evaluation mode before we can use it
 model.eval()
 
 sentence = "Dobra stran arhitekture BERT je da jo lahko samo izpopolnimo in tako ohranimo že vsebovano jezikovno znanje ."
 
-masked_sentence = """[CLS] Dobra [MASK] stran [MASK] arhitekture [MASK] bert [MASK] je [MASK] da [MASK] jo [MASK] lahko [MASK] samo [MASK] izpopolnimo [MASK] in [MASK] tako [MASK] ohranimo [MASK] že [MASK] vsebovano [MASK] jezikovno [MASK] znanje [MASK] . [SEP]"""
+masked_sentence = """<s> Dobra <mask> stran <mask> arhitekture <mask> bert <mask> je <mask> da <mask> jo <mask> lahko <mask> samo <mask> izpopolnimo <mask> in <mask> tako <mask> ohranimo <mask> že <mask> vsebovano <mask> jezikovno <mask> znanje <mask> . </s>"""
 
 input_ids = []
 attention_masks = []
@@ -26,8 +27,9 @@ label_list = []
 encoded_dict = tokenizer.encode_plus(
                     masked_sentence,
                     add_special_tokens = False,
-                    max_length = 128,
-                    padding = 'max_length',
+                    max_length = 200,
+                    #pad_to_max_length = True,
+                    padding='max_length',
                     truncation = True,
                     return_attention_mask = True,
                     return_tensors = 'pt',
@@ -50,9 +52,9 @@ index_mask = 0
 origin_counter_sentence = 0
 
 for token in masked_sentence.split(" "):
-    if token != "[CLS]" and token != "[SEP]":
-        if token == "[MASK]":
-            while input_ids[index_mask] != 105:
+    if token != "<s>" and token != "</s>":
+        if token == "<mask>":
+            while input_ids[index_mask] != mask_token_id:
                 index_mask = index_mask + 1
             if torch.argmax(logits[0, index_mask]).item() == 1:
                 predicted_sentence += ","
