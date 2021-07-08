@@ -27,7 +27,7 @@ label_list = []
 encoded_dict = tokenizer.encode_plus(
                     masked_sentence,
                     add_special_tokens = False,
-                    max_length = 200,
+                    max_length = 256,
                     #pad_to_max_length = True,
                     padding='max_length',
                     truncation = True,
